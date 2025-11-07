@@ -10,6 +10,9 @@ uint32_t get_sample_value(uint8_t *data, uint16_t bps, uint32_t sample_index) {
   } else if (bps <= 16) {
     uint16_t *data16 = (uint16_t *)data;
     return data16[sample_index];
+  } else if (bps <= 32) {
+    uint32_t *data32 = (uint32_t *)data;
+    return data32[sample_index];
   }
   return 0;
 }
@@ -21,6 +24,9 @@ void set_sample_value(uint8_t *data, uint16_t bps, uint32_t sample_index,
   } else if (bps <= 16) {
     uint16_t *data16 = (uint16_t *)data;
     data16[sample_index] = value;
+  } else if (bps <= 32) {
+    uint32_t *data32 = (uint32_t *)data;
+    data32[sample_index] = value;
   }
 }
 
@@ -105,24 +111,55 @@ int main(int argc, char *argv[]) {
   TIFFGetFieldDefaulted(tif1, TIFFTAG_PHOTOMETRIC, &photo1);
   scanlineSize1 = TIFFScanlineSize(tif1);
 
-  printf("loaded %s: %dx%d %d-bit %d channels\n", argv[1], w1, h1, bps1, spp1);
+  // For palette images, convert to RGBA using TIFFReadRGBAImageOriented
+  // Then we'll convert back to the appropriate bit depth later
+  int converted_to_rgba = 0;
+  if (photo1 == PHOTOMETRIC_PALETTE) {
+    printf("loaded %s: %dx%d %d-bit palette (%d entries), will convert to RGBA then to target depth\n",
+           argv[1], w1, h1, bps1, 1 << bps1);
 
-  raster1 = _TIFFmalloc(scanlineSize1 * h1);
-  if (!raster1) {
-    printf("error: out of memory\n");
-    TIFFClose(tif1);
-    return 1;
-  }
+    // Allocate for RGBA (4 bytes per pixel)
+    raster1 = _TIFFmalloc(w1 * h1 * sizeof(uint32_t));
+    if (!raster1) {
+      printf("error: out of memory\n");
+      TIFFClose(tif1);
+      return 1;
+    }
 
-  for (uint32_t row = 0; row < h1; row++) {
-    if (TIFFReadScanline(tif1, (uint8_t *)raster1 + row * scanlineSize1, row,
-                         0) < 0) {
-      printf("error: failed to read scanline from %s\n", argv[1]);
+    if (!TIFFReadRGBAImageOriented(tif1, w1, h1, (uint32_t *)raster1, ORIENTATION_TOPLEFT, 0)) {
+      printf("error: failed to read RGBA from %s\n", argv[1]);
       _TIFFfree(raster1);
       TIFFClose(tif1);
       return 1;
     }
+
+    // Mark that we've converted to RGBA
+    converted_to_rgba = 1;
+    bps1 = 8;
+    spp1 = 4;  // RGBA
+    photo1 = PHOTOMETRIC_RGB;
+    scanlineSize1 = w1 * 4;
+  } else {
+    printf("loaded %s: %dx%d %d-bit %d channels\n", argv[1], w1, h1, bps1, spp1);
+
+    raster1 = _TIFFmalloc(scanlineSize1 * h1);
+    if (!raster1) {
+      printf("error: out of memory\n");
+      TIFFClose(tif1);
+      return 1;
+    }
+
+    for (uint32_t row = 0; row < h1; row++) {
+      if (TIFFReadScanline(tif1, (uint8_t *)raster1 + row * scanlineSize1, row,
+                           0) < 0) {
+        printf("error: failed to read scanline from %s\n", argv[1]);
+        _TIFFfree(raster1);
+        TIFFClose(tif1);
+        return 1;
+      }
+    }
   }
+
   TIFFClose(tif1);
 
   tif2 = TIFFOpen(argv[2], "r");
@@ -139,28 +176,59 @@ int main(int argc, char *argv[]) {
   TIFFGetFieldDefaulted(tif2, TIFFTAG_PHOTOMETRIC, &photo2);
   scanlineSize2 = TIFFScanlineSize(tif2);
 
-  printf("loaded %s: %dx%d %d-bit %d channels\n", argv[2], w2, h2, bps2, spp2);
+  int converted_to_rgba2 = 0;
+  if (photo2 == PHOTOMETRIC_PALETTE) {
+    printf("loaded %s: %dx%d %d-bit palette (%d entries), will convert to RGBA then to target depth\n",
+           argv[2], w2, h2, bps2, 1 << bps2);
 
-  raster2 = _TIFFmalloc(scanlineSize2 * h2);
-  if (!raster2) {
-    printf("error: out of memory\n");
-    _TIFFfree(raster1);
-    TIFFClose(tif2);
-    return 1;
-  }
+    // Allocate for RGBA (4 bytes per pixel)
+    raster2 = _TIFFmalloc(w2 * h2 * sizeof(uint32_t));
+    if (!raster2) {
+      printf("error: out of memory\n");
+      _TIFFfree(raster1);
+      TIFFClose(tif2);
+      return 1;
+    }
 
-  for (uint32_t row = 0; row < h2; row++) {
-    if (TIFFReadScanline(tif2, (uint8_t *)raster2 + row * scanlineSize2, row,
-                         0) < 0) {
-      printf("error: failed to read scanline from %s\n", argv[2]);
+    if (!TIFFReadRGBAImageOriented(tif2, w2, h2, (uint32_t *)raster2, ORIENTATION_TOPLEFT, 0)) {
+      printf("error: failed to read RGBA from %s\n", argv[2]);
       _TIFFfree(raster1);
       _TIFFfree(raster2);
       TIFFClose(tif2);
       return 1;
     }
+
+    // Mark that we've converted to RGBA
+    converted_to_rgba2 = 1;
+    bps2 = 8;
+    spp2 = 4;  // RGBA
+    photo2 = PHOTOMETRIC_RGB;
+    scanlineSize2 = w2 * 4;
+  } else {
+    printf("loaded %s: %dx%d %d-bit %d channels\n", argv[2], w2, h2, bps2, spp2);
+
+    raster2 = _TIFFmalloc(scanlineSize2 * h2);
+    if (!raster2) {
+      printf("error: out of memory\n");
+      _TIFFfree(raster1);
+      TIFFClose(tif2);
+      return 1;
+    }
+
+    for (uint32_t row = 0; row < h2; row++) {
+      if (TIFFReadScanline(tif2, (uint8_t *)raster2 + row * scanlineSize2, row,
+                           0) < 0) {
+        printf("error: failed to read scanline from %s\n", argv[2]);
+        _TIFFfree(raster1);
+        _TIFFfree(raster2);
+        TIFFClose(tif2);
+        return 1;
+      }
+    }
   }
   TIFFClose(tif2);
 
+  // Determine output format
   output_bps = bps1 > bps2 ? bps1 : bps2;
   output_spp = spp1 > spp2 ? spp1 : spp2;
   output_photo = photo1;
