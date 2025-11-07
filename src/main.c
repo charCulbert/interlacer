@@ -62,7 +62,7 @@ void convert_pixel(uint8_t *src, uint16_t src_bps, uint16_t src_spp,
 
 int main(int argc, char *argv[]) {
   printf("\n%s%s┌─────────────────────────────┐%s\n", COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
-  printf("%s%s│       INTERLACER v1.0       │%s\n", COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
+  printf("%s%s│       INTERLACER     │%s\n", COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
   printf("%s%s└─────────────────────────────┘%s\n\n", COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
   char *outputFilename = "interlacedOutput.tif";
   int use_row_mode = 0;
