@@ -1,3 +1,4 @@
 *.tif
 build/
 tifs/
+.claude/
