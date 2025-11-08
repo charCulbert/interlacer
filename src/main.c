@@ -61,9 +61,9 @@ void convert_pixel(uint8_t *src, uint16_t src_bps, uint16_t src_spp,
 }
 
 int main(int argc, char *argv[]) {
-  printf("\n%s%s┌─────────────────────────────┐%s\n", COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
-  printf("%s%s│       INTERLACER     │%s\n", COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
-  printf("%s%s└─────────────────────────────┘%s\n\n", COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
+  printf("\n%s%s┌─────────────────────────┐%s\n", COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
+  printf("%s%s│       INTERLACER        │%s\n", COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
+  printf("%s%s└─────────────────────────┘%s\n\n", COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
   char *outputFilename = "interlacedOutput.tif";
   int use_row_mode = 0;
   int use_col_mode = 0;
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
   int i;
 
   if (argc < 3) {
-    printf("Combines two TIFF images by alternating pixels between them.\n\n");
+    printf("Combines two TIFF images by alternating pixels between them, similar to how interlaced video behaves (when uses in row mode only.\n\n");
     printf("Usage: ./interlacer <file1> <file2> [options]\n\n");
     printf("Options:\n");
     printf("  -o <filename>   output file (default: interlacedOutput.tif)\n");
