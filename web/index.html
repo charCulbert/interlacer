@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Interlacer</title>
+	<style>
+		* {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
+		}
+
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+			background: #000;
+			color: #fff;
+			min-height: 100vh;
+			padding: 40px 20px;
+		}
+
+		.container {
+			max-width: 1400px;
+			margin: 0 auto;
+		}
+
+		header {
+			text-align: center;
+			margin-bottom: 60px;
+			padding-bottom: 30px;
+			border-bottom: 1px solid #333;
+		}
+
+		h1 {
+			font-size: 3em;
+			font-weight: 300;
+			letter-spacing: 0.1em;
+			margin-bottom: 10px;
+		}
+
+		.subtitle {
+			color: #999;
+			font-size: 1em;
+			letter-spacing: 0.05em;
+		}
+
+		.workspace {
+			display: grid;
+			grid-template-columns: 1fr 1fr 1fr;
+			gap: 40px;
+			margin-bottom: 40px;
+		}
+
+		.image-panel {
+			background: #111;
+			border: 1px solid #333;
+			border-radius: 4px;
+			padding: 20px;
+			transition: border-color 0.3s;
+		}
+
+		.image-panel:hover {
+			border-color: #666;
+		}
+
+		.panel-header {
+			font-size: 0.85em;
+			letter-spacing: 0.1em;
+			text-transform: uppercase;
+			color: #999;
+			margin-bottom: 20px;
+			text-align: center;
+		}
+
+		.drop-zone {
+			border: 2px dashed #333;
+			border-radius: 4px;
+			padding: 40px 20px;
+			text-align: center;
+			cursor: pointer;
+			transition: all 0.3s;
+			min-height: 400px;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.drop-zone:hover {
+			border-color: #666;
+			background: #0a0a0a;
+		}
+
+		.drop-zone.drag-over {
+			border-color: #fff;
+			background: #1a1a1a;
+		}
+
+		.drop-zone input[type="file"] {
+			display: none;
+		}
+
+		.drop-hint {
+			color: #666;
+			font-size: 0.9em;
+		}
+
+		.preview-area {
+			display: none;
+		}
+
+		.preview-area.active {
+			display: block;
+		}
+
+		.preview-area canvas {
+			width: 100%;
+			height: auto;
+			border: 1px solid #333;
+			border-radius: 4px;
+			background: #000;
+		}
+
+		.file-info {
+			margin-top: 15px;
+			padding-top: 15px;
+			border-top: 1px solid #222;
+			font-size: 0.85em;
+			color: #666;
+			font-family: monospace;
+		}
+
+		.controls {
+			background: #111;
+			border: 1px solid #333;
+			border-radius: 4px;
+			padding: 30px;
+			margin-bottom: 40px;
+		}
+
+		.controls-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 30px;
+			margin-bottom: 30px;
+		}
+
+		.control-group label {
+			display: block;
+			font-size: 0.85em;
+			letter-spacing: 0.05em;
+			color: #999;
+			margin-bottom: 10px;
+			text-transform: uppercase;
+		}
+
+		.control-group input[type="number"] {
+			width: 100%;
+			padding: 12px;
+			background: #000;
+			border: 1px solid #333;
+			border-radius: 4px;
+			color: #fff;
+			font-size: 1.2em;
+			font-family: monospace;
+			transition: border-color 0.3s;
+		}
+
+		.control-group input[type="number"]:focus {
+			outline: none;
+			border-color: #666;
+		}
+
+		.actions {
+			display: flex;
+			gap: 15px;
+			justify-content: center;
+		}
+
+		button {
+			padding: 15px 40px;
+			background: #fff;
+			color: #000;
+			border: none;
+			border-radius: 4px;
+			font-size: 0.9em;
+			font-weight: 600;
+			letter-spacing: 0.1em;
+			text-transform: uppercase;
+			cursor: pointer;
+			transition: all 0.3s;
+			font-family: inherit;
+		}
+
+		button:hover:not(:disabled) {
+			background: #ddd;
+		}
+
+		button:disabled {
+			background: #333;
+			color: #666;
+			cursor: not-allowed;
+		}
+
+		button.secondary {
+			background: transparent;
+			border: 1px solid #333;
+			color: #fff;
+		}
+
+		button.secondary:hover {
+			background: #111;
+			border-color: #666;
+		}
+
+		.status {
+			text-align: center;
+			padding: 20px;
+			margin: 30px 0;
+			border-radius: 4px;
+			font-size: 0.9em;
+			display: none;
+		}
+
+		.status.active {
+			display: block;
+		}
+
+		.status.loading {
+			background: #1a1a1a;
+			border: 1px solid #333;
+			color: #999;
+		}
+
+		.status.success {
+			background: #0a2e0a;
+			border: 1px solid #1a4d1a;
+			color: #4d994d;
+		}
+
+		.status.error {
+			background: #2e0a0a;
+			border: 1px solid #4d1a1a;
+			color: #994d4d;
+		}
+
+		.download-section {
+			text-align: center;
+			margin-top: 30px;
+			display: none;
+		}
+
+		.download-section.active {
+			display: block;
+		}
+
+		.download-btn {
+			display: inline-block;
+			padding: 20px 50px;
+			background: #fff;
+			color: #000;
+			text-decoration: none;
+			border-radius: 4px;
+			font-size: 1em;
+			font-weight: 600;
+			letter-spacing: 0.1em;
+			text-transform: uppercase;
+			transition: background 0.3s;
+		}
+
+		.download-btn:hover {
+			background: #ddd;
+		}
+
+		@media (max-width: 1200px) {
+			.workspace {
+				grid-template-columns: 1fr;
+			}
+
+			.controls-grid {
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<header>
+			<h1>INTERLACER</h1>
+			<p class="subtitle">TIFF Image Interlacing Tool</p>
+		</header>
+
+		<div class="workspace">
+			<div class="image-panel">
+				<div class="panel-header">Input 1</div>
+				<div class="drop-zone" id="dropZone1">
+					<input type="file" id="file1" accept=".tif,.tiff">
+					<div class="drop-hint">Drop TIFF or click to browse</div>
+				</div>
+				<div class="preview-area" id="preview1">
+					<canvas id="canvas1"></canvas>
+					<div class="file-info" id="info1"></div>
+				</div>
+			</div>
+
+			<div class="image-panel">
+				<div class="panel-header">Input 2</div>
+				<div class="drop-zone" id="dropZone2">
+					<input type="file" id="file2" accept=".tif,.tiff">
+					<div class="drop-hint">Drop TIFF or click to browse</div>
+				</div>
+				<div class="preview-area" id="preview2">
+					<canvas id="canvas2"></canvas>
+					<div class="file-info" id="info2"></div>
+				</div>
+			</div>
+
+			<div class="image-panel">
+				<div class="panel-header">Output</div>
+				<div class="preview-area" id="previewOutput">
+					<canvas id="canvasOutput"></canvas>
+					<div class="file-info" id="infoOutput"></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="controls">
+			<div class="controls-grid">
+				<div class="control-group">
+					<label for="rowInterval">Row Interval</label>
+					<input type="number" id="rowInterval" min="0" max="100" value="1">
+				</div>
+				<div class="control-group">
+					<label for="colInterval">Column Interval</label>
+					<input type="number" id="colInterval" min="0" max="100" value="0">
+				</div>
+			</div>
+
+			<div class="actions">
+				<button id="processBtn" onclick="processImages()">Process</button>
+				<button class="secondary" onclick="clearAll()">Clear</button>
+			</div>
+		</div>
+
+		<div class="status" id="status"></div>
+
+		<div class="download-section" id="downloadSection">
+			<a class="download-btn" id="downloadLink" download="interlaced.tif">Download TIFF</a>
+		</div>
+	</div>
+
+	<script>
+		let Module = null;
+		let moduleReady = false;
+		let file1Data = null;
+		let file2Data = null;
+
+		// Load WASM module
+		const script = document.createElement('script');
+		script.src = '../wasm_build/interlacer.js';
+		script.onload = async () => {
+			try {
+				showStatus('Loading...', 'loading');
+				Module = await InterlacerModule();
+				moduleReady = true;
+				showStatus('Ready', 'success');
+				document.getElementById('processBtn').disabled = false;
+				setTimeout(() => hideStatus(), 2000);
+			} catch (e) {
+				showStatus('Error: ' + e.message, 'error');
+				console.error(e);
+			}
+		};
+		script.onerror = () => {
+			showStatus('Failed to load WASM module', 'error');
+		};
+		document.head.appendChild(script);
+
+		// Render TIFF using our libtiff WASM module
+		function renderTIFFToCanvas(data, canvas, tempFilename) {
+			if (!moduleReady) {
+				console.log('Module not ready');
+				return false;
+			}
+
+			try {
+				// Write TIFF to virtual filesystem
+				console.log('Writing file:', tempFilename, 'size:', data.length);
+				Module.FS.writeFile(tempFilename, data);
+
+				// Verify it was written
+				const stat = Module.FS.stat(tempFilename);
+				console.log('File written, size:', stat.size);
+
+				// Get dimensions
+				const widthPtr = Module._malloc(4);
+				const heightPtr = Module._malloc(4);
+
+				console.log('Calling get_tiff_info with:', tempFilename);
+				const infoResult = Module.ccall(
+					'get_tiff_info', 'number',
+					['string', 'number', 'number'],
+					[tempFilename, widthPtr, heightPtr]
+				);
+				console.log('get_tiff_info result:', infoResult);
+
+				if (!infoResult) {
+					Module._free(widthPtr);
+					Module._free(heightPtr);
+					Module.FS.unlink(tempFilename);
+					return false;
+				}
+
+				const width = Module.getValue(widthPtr, 'i32');
+				const height = Module.getValue(heightPtr, 'i32');
+				console.log('Dimensions:', width, 'x', height);
+				Module._free(widthPtr);
+				Module._free(heightPtr);
+
+				// Get RGBA data
+				console.log('Calling tiff_to_rgba');
+				const rgbaPtr = Module.ccall(
+					'tiff_to_rgba_file', 'number',
+					['string'],
+					[tempFilename]
+				);
+				console.log('RGBA pointer:', rgbaPtr);
+
+				if (!rgbaPtr) {
+					Module.FS.unlink(tempFilename);
+					return false;
+				}
+
+				// Write the RGBA data to a temp file and read it back
+				// This is easier than fighting with WASM memory access
+				const numBytes = width * height * 4;
+
+				// Use getValue to read the RGBA data byte by byte
+				const rgbaData = new Uint8ClampedArray(numBytes);
+				for (let i = 0; i < numBytes; i++) {
+					rgbaData[i] = Module.getValue(rgbaPtr + i, 'i8') & 0xFF;
+				}
+
+				// Render to canvas
+				canvas.width = width;
+				canvas.height = height;
+				const ctx = canvas.getContext('2d');
+				const imageData = new ImageData(rgbaData, width, height);
+				ctx.putImageData(imageData, 0, 0);
+
+				// Cleanup
+				Module._free(rgbaPtr);
+				Module.FS.unlink(tempFilename);
+
+				return true;
+			} catch (e) {
+				console.error('TIFF render error:', e);
+				return false;
+			}
+		}
+
+		function setupDropZone(zoneId, fileId, canvasId, infoId, previewId, fileNum) {
+			const zone = document.getElementById(zoneId);
+			const input = document.getElementById(fileId);
+			const canvas = document.getElementById(canvasId);
+			const info = document.getElementById(infoId);
+			const preview = document.getElementById(previewId);
+
+			zone.addEventListener('click', () => input.click());
+			zone.addEventListener('dragover', (e) => {
+				e.preventDefault();
+				zone.classList.add('drag-over');
+			});
+			zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+			zone.addEventListener('drop', (e) => {
+				e.preventDefault();
+				zone.classList.remove('drag-over');
+				if (e.dataTransfer.files.length > 0) {
+					input.files = e.dataTransfer.files;
+					handleFile(e.dataTransfer.files[0], canvas, info, preview, zone, fileNum);
+				}
+			});
+			input.addEventListener('change', (e) => {
+				if (e.target.files.length > 0) {
+					handleFile(e.target.files[0], canvas, info, preview, zone, fileNum);
+				}
+			});
+		}
+
+		async function handleFile(file, canvas, info, preview, zone, fileNum) {
+			const data = new Uint8Array(await file.arrayBuffer());
+			if (fileNum === 1) file1Data = data;
+			else if (fileNum === 2) file2Data = data;
+
+			info.textContent = `${file.name} | ${(data.length / 1024).toFixed(1)} KB`;
+
+			const tempFilename = `/preview${fileNum}.tif`;
+			const rendered = renderTIFFToCanvas(data, canvas, tempFilename);
+			if (rendered) {
+				info.textContent += ` | ${canvas.width}x${canvas.height}`;
+			} else {
+				info.textContent += ' | Preview failed';
+			}
+
+			zone.style.display = 'none';
+			preview.classList.add('active');
+			document.getElementById('downloadSection').classList.remove('active');
+		}
+
+		setupDropZone('dropZone1', 'file1', 'canvas1', 'info1', 'preview1', 1);
+		setupDropZone('dropZone2', 'file2', 'canvas2', 'info2', 'preview2', 2);
+
+		function showStatus(message, type) {
+			const status = document.getElementById('status');
+			status.className = `status ${type} active`;
+			status.textContent = message;
+		}
+
+		function hideStatus() {
+			document.getElementById('status').classList.remove('active');
+		}
+
+		async function processImages() {
+			if (!moduleReady) {
+				showStatus('WASM not ready', 'error');
+				return;
+			}
+			if (!file1Data || !file2Data) {
+				showStatus('Load both images first', 'error');
+				return;
+			}
+
+			try {
+				showStatus('Processing...', 'loading');
+
+				const FS = Module.FS;
+				FS.writeFile('/input1.tif', file1Data);
+				FS.writeFile('/input2.tif', file2Data);
+
+				const rowInterval = parseInt(document.getElementById('rowInterval').value) || 1;
+				const colInterval = parseInt(document.getElementById('colInterval').value) || 0;
+
+				const result = Module.ccall(
+					'interlace_files', 'number',
+					['string', 'string', 'string', 'number', 'number'],
+					['/input1.tif', '/input2.tif', '/output.tif', rowInterval, colInterval]
+				);
+
+				if (result === 0) {
+					const outputData = FS.readFile('/output.tif');
+
+					const canvas = document.getElementById('canvasOutput');
+					const rendered = renderTIFFToCanvas(outputData, canvas, '/output.tif');
+
+					document.getElementById('infoOutput').textContent =
+						`interlaced.tif | ${(outputData.length / 1024).toFixed(1)} KB` +
+						(rendered ? ` | ${canvas.width}x${canvas.height}` : '');
+					document.getElementById('previewOutput').classList.add('active');
+
+					const blob = new Blob([outputData], {type: 'image/tiff'});
+					const url = URL.createObjectURL(blob);
+					document.getElementById('downloadLink').href = url;
+					document.getElementById('downloadSection').classList.add('active');
+
+					showStatus('Complete', 'success');
+					setTimeout(() => hideStatus(), 3000);
+
+					FS.unlink('/input1.tif');
+					FS.unlink('/input2.tif');
+					FS.unlink('/output.tif');
+				} else {
+					showStatus('Processing failed', 'error');
+				}
+			} catch (e) {
+				showStatus('Error: ' + e.message, 'error');
+				console.error(e);
+			}
+		}
+
+		function clearAll() {
+			file1Data = null;
+			file2Data = null;
+			document.getElementById('file1').value = '';
+			document.getElementById('file2').value = '';
+			['dropZone1', 'dropZone2'].forEach(id => {
+				document.getElementById(id).style.display = '';
+			});
+			['preview1', 'preview2', 'previewOutput'].forEach(id => {
+				document.getElementById(id).classList.remove('active');
+			});
+			document.getElementById('downloadSection').classList.remove('active');
+			document.getElementById('rowInterval').value = '1';
+			document.getElementById('colInterval').value = '0';
+			hideStatus();
+		}
+
+		document.addEventListener('DOMContentLoaded', () => {
+			document.getElementById('processBtn').disabled = true;
+		});
+	</script>
+</body>
+
+</html>

@@ -1,4 +1,10 @@
-*.tif
 build/
+wasm_build/
+interlacer
+tiff-*.tar.gz
+.DS_Store
+*.tif
 tifs/
 .claude/
+tiff-4.6.0/
+interlacer
