@@ -2,3 +2,5 @@
 build/
 tifs/
 .claude/
+tiff-4.6.0/
+wasm_build/
