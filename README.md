@@ -18,11 +18,11 @@ A command-line tool written in C that uses libTIFF to interlace images horizonta
 ### Examples
 
 ```bash
-./interlacer a.tif b.tif              # alternate rows
-./interlacer a.tif b.tif -c 1         # alternate columns
+./interlacer a.tif b.tif -r 1         # alternate every 1 rows
+./interlacer a.tif b.tif -c 9         # alternate every 9 columns
 ./interlacer a.tif b.tif -r 2 -c 2    # 2x2 checkerboard
 ```
 
-The tool handles different image dimensions, bit depths, and color formats automatically.
+Most common tiff file types are handled including various image dimensions, bit depths, and color formats.
 
-A WebAssembly version is in development on the `wasm` branch that will compile with Emscripten.
+A WebAssembly version is in development on the `wasm` branch that compiles with Emscripten.
